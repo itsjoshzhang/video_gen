@@ -4,6 +4,7 @@ from PIL import Image
 from google import genai
 from google.genai import types
 from google.oauth2 import service_account
+from moviepy import VideoFileClip, concatenate_videoclips
 
 # oauth, genai stuff
 filename = "service_account_file.json"
@@ -20,13 +21,8 @@ client = genai.Client(
 # prompt engineering
 def video_gen(image_path, video_path=None, prompt_add=None, args_input=None):
     prompt = f"""
-    Shoot a smooth drone fly-by movie starring this tree. The drone should capture a full 360 degree view of the tree (The first frame should be the uploaded image facing the front of the tree. Then circle the drone around to show a frame facing the back of the tree. Keep circling in the same direction to face the front again for the final frame).
-    Make the drone fly-by as fast as needed to finish the full 360 degree circle, and make the drone fly parallel to the ground (no vertical camera movement). Make sure every angle of the tree is captured (infer any details needed about surroundings). Make sure the entire tree and movie is reanimated """
-    if prompt_add is None:
-        prompt += "with boosted, saturated, vibrant color grading."
-    else:
-        prompt += prompt_add
-
+Shoot a drone fly-by movie starring this tree. The camera should capture a full 360 degree view around the tree (The first frame is the given image facing the front of the tree. Then circle the drone to the RIGHT to show a frame facing the back of the tree. Make the drone fly-by as fast as needed to finish a full 360 degree view and make the drone fly level with the ground. Make sure every angle of the tree is shown so infer surroundings as needed. MOST IMPORTANTLY: make the drone fly far/wide enough to fully capture all parts of the tree, trunk, and canopy: the video edge must not cut off any organ of the tree so infer non-visible parts as needed. MORE IMPORTANTLY: fly the drone to the RIGHT, ignore any obstacles fly through them, just pan to the RIGHT.
+"""
     # video gen options:
     if args_input is None:
         arg = input(f"""Video generation options:
@@ -117,29 +113,14 @@ def video_gen(image_path, video_path=None, prompt_add=None, args_input=None):
 
 # prompt engineering
 if __name__ == "__main__":
-    styles = [
-        "like a high-contrast dramatic shadowy noir film",
-        "like a Wizard-Oz vibrant Technicolor stage play",
-        "like a film-grainy sepia-color old western film",
-        "like a glitchy-VHS chromatic-abr vaporwave film",
-        "like a neon-lit rainy city techy cyperbunk film",
-        "like a telephoto-lens hi-bokeh NatGeo IMAX film",
-        "like a hand-drawn cel-shade Studio Ghibli anime",
-        "like a plastic-feel stop-motion claymation film",
-        "like a gothic victorian puppety Tim Burton film",
-        "like a gold-lit childish whimsical fantasy film",
-        "like a swirling Van Gogh starry nights painting",
-        "like a surrealist melting Salvador Dali painting",
-    ]
-    # for style in styles:
-    #     video_gen(image_path="", video_path="", prompt_add=style, args_input=0)
+    for i in [1, 8]:
+        video_gen(image_path=f"{i}.png", video_path=f"{i}.mp4", args_input=3)
 
-    angles = [
-        None,
-        "with the camera lying as low as possible from the POV of an ant on the ground looking up to the tree",
-        "with the camera raised high from the POV of a bird circling the tree canopy looking down at the tree",
-        "with the camera circling as far away from the tree as possible, giving a wide angle shot of the tree",
-        "with the camera flying into/close to the tree as possible, giving a close-up of the trunk and canopy",
-    ]
-    for angle in angles:
-        video_gen(image_path="", video_path="", prompt_add=angle, args_input=0)
+    def concatenate(path1, path2, pathout):
+        clip1 = VideoFileClip(path1)
+        clip2 = VideoFileClip(path2).subclip(0, 7.5)
+        final = concatenate_videoclips([clip1, clip2])
+        final.write_videofile(pathout)
+
+    for i in [1, 2, 3]:
+        concatenate(f"{i}.mp4", f"{i}{i}.mp4", f"out{i}.mp4")
